@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+<link rel="manifest" href="site.webmanifest" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notebook Viewer — Fixed Scrolling</title>
+
+  <style>
+    /* === Black & Cinder embers Theme === */
+    :root {
+      --bg: #000000;
+      --bg-end: #1e1109;
+      --grad-x: 50%;
+      --grad-y: 50%;
+      --card: #110c09;
+      --card2: #110c09ac;
+      --muted: #fdba74;
+      --text: #ffedd5;
+      --rev-text: #000000;
+      --accent: linear-gradient(90deg, #f97316, #fb923c 60%, #fdba74);
+      --primary: #f97316;
+      --secondary: #fb923c;
+      --glass: rgba(249, 115, 22, 0.04);
+      --glass-2: rgba(249, 115, 22, 0.02);
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.7);
+      --radius: 12px;
+      --container: 1100px;
+      --gap: 1.25rem;
+      --glass-border: rgba(249, 115, 22, 0.06);
+      --blend-mode: normal;
+      --card-shadow: 12px 12px 24px rgba(0, 0, 0, 0.6);
+      --card-shadow-inset: -8px -8px 18px rgba(255, 255, 255, 0.02);
+      --card-shadow-hover: 16px 20px 44px rgba(0, 0, 0, 0.6), -8px -8px 18px rgba(255, 255, 255, 0.02);
+      --logo-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+      --logo-shadow-inset: -8px -8px 20px rgba(255, 255, 255, 0.02) inset, 8px 8px 20px rgba(0, 0, 0, 0.6) inset;
+      --toggle-shadow-inset: -6px -6px 14px rgba(255, 255, 255, 0.03) inset, 6px 6px 18px rgba(0, 0, 0, 0.55) inset;
+      --toggle-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.5);
+      --iframe-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      --card-border-color: var(--glass-border);
+      --code-bg: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4));
+      --code-border: rgba(255, 255, 255, 0.02);
+      --code-text: var(--text);
+      --scroll-track: rgba(255, 255, 255, 0.02);
+      --scroll-thumb: rgba(249, 115, 22, 0.22);
+      --scroll-thumb-hover: rgba(249, 115, 22, 0.34);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #fff7ed;
+      --bg-end: #fdead7;
+      --card: #ffffff;
+      --card2: #ffffff93;
+      --muted: #c2410c;
+      --text: #9a3412;
+      --rev-text: #ffedd5;
+      --accent: linear-gradient(90deg, #ea580c, #f97316 55%, #fb923c);
+      --primary: #ea580c;
+      --secondary: #f97316;
+      --glass: rgba(154, 52, 18, 0.03);
+      --glass-2: rgba(154, 52, 18, 0.02);
+      --glass-border: rgba(154, 52, 18, 0.06);
+      --shadow: 0 10px 30px rgba(154, 52, 18, 0.08);
+      --card-shadow: 8px 10px 22px rgba(154, 52, 18, 0.08);
+      --card-shadow-inset: -6px -6px 14px rgba(255, 255, 255, 0.6);
+      --card-shadow-hover: 10px 14px 36px rgba(154, 52, 18, 0.09), -6px -6px 14px rgba(255, 255, 255, 0.6);
+      --logo-shadow: 0 8px 20px rgba(154, 52, 18, 0.06);
+      --logo-shadow-inset: -6px -6px 14px rgba(255, 255, 255, 0.9) inset, 6px 6px 14px rgba(0, 0, 0, 0.06) inset;
+      --toggle-shadow-inset: -4px -4px 10px rgba(255, 255, 255, 0.9) inset, 4px 4px 12px rgba(0, 0, 0, 0.06) inset;
+      --toggle-shadow-hover: 0 10px 24px rgba(154, 52, 18, 0.08);
+      --iframe-shadow: 0 8px 22px rgba(154, 52, 18, 0.06);
+      --card-border-color: var(--glass-border);
+      --code-bg: linear-gradient(180deg, #fffcf9, #ffffff);
+      --code-border: rgba(0, 0, 0, 0.06);
+      --code-text: var(--text);
+      --scroll-track: rgba(0, 0, 0, 0.03);
+      --scroll-thumb: rgba(234, 88, 12, 0.14);
+      --scroll-thumb-hover: rgba(234, 88, 12, 0.26);
+    }
+
+    /* === Global & Scrollbar === */
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background:
+        radial-gradient(circle at 10% 20%, var(--glass), transparent 40%),
+        radial-gradient(circle at 90% 80%, var(--glass-2), transparent 50%),
+        radial-gradient(circle at var(--grad-x) var(--grad-y), var(--bg) 0%, var(--bg-end) 100%);
+      transition: color 400ms ease;
+    }
+
+    .sidebar,
+    .content-area,
+    .table-wrapper {
+      scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+      scrollbar-width: thin;
+    }
+
+    .sidebar::-webkit-scrollbar,
+    .content-area::-webkit-scrollbar,
+    .table-wrapper::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+
+    .sidebar::-webkit-scrollbar-track,
+    .content-area::-webkit-scrollbar-track,
+    .table-wrapper::-webkit-scrollbar-track {
+      background: var(--scroll-track);
+      border-radius: 12px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb,
+    .content-area::-webkit-scrollbar-thumb,
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: var(--scroll-thumb);
+      border-radius: 12px;
+      border: 3px solid var(--scroll-track);
+      transition: background 180ms ease;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover,
+    .content-area::-webkit-scrollbar-thumb:hover,
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: var(--scroll-thumb-hover);
+    }
+
+    /* === Theme Wipe Transition === */
+    html {
+      position: relative;
+      z-index: 1;
+    }
+
+    html::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 10% 20%, var(--transition-glass, transparent), transparent 40%),
+        radial-gradient(circle at 90% 80%, var(--transition-glass-2, transparent), transparent 50%),
+        radial-gradient(circle at var(--grad-x) var(--grad-y), var(--transition-bg, transparent) 0%, var(--transition-bg-end, transparent) 100%);
+      clip-path: circle(0% at 0 0);
+      transition: clip-path 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    html.theme-in-transition::before {
+      clip-path: circle(150% at 0 0);
+    }
+
+    /* === Layout & Controls === */
+    .app-layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--card);
+      border-right: 1px solid var(--glass-border);
+      padding: 24px;
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content-area {
+      flex: 1;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 36px 48px;
+    }
+
+    #notebook-viewer,
+    #welcome-screen {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    header.app-header {
+      display: grid;
+      align-items: center;
+      justify-content: center;
+      /* margin-bottom: 24px; */
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .title-group {
+      display: grid;
+      /* align-items: center; */
+      /* gap: 12px; */
+      justify-items: center;
+    }
+
+    .logo {
+      min-width: 48px;
+      width: 150px;
+      height: auto;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--logo-shadow-inset), var(--logo-shadow);
+      border: 1px solid var(--card-border-color);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      color: var(--text);
+      letter-spacing: 0.2px;
+    }
+
+    .theme-toggle {
+      --size: 44px;
+      width: var(--size);
+      height: var(--size);
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.005));
+      color: var(--text);
+      border: 1px solid var(--card-border-color);
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+      box-shadow: var(--toggle-shadow-inset);
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--toggle-shadow-hover);
+    }
+
+    #notebookList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-grow: 1;
+      overflow: auto;
+      margin-bottom: 20px;
+    }
+
+    .sidebar-item {
+      display: block;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: background 220ms ease, border-color 220ms ease;
+      border: 1px solid transparent;
+      background: var(--glass);
+      user-select: none;
+    }
+
+    .sidebar-item:hover {
+      background: var(--glass-2);
+      border-color: var(--glass-border);
+    }
+
+    .sidebar-item.active {
+      background: var(--glass-2);
+      border-color: var(--primary);
+    }
+
+    .notebook-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .notebook-date {
+      font-style: italic;
+      color: gray;
+      margin-bottom: 4px;
+    }
+
+    .notebook-meta {
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 4px;
+      color: var(--muted);
+      opacity: 0.95 ;
+    }
+
+    #welcome-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    #welcome-screen.visible {
+      animation: fadeIn 500ms 100ms ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #welcome-screen h2 {
+      font-size: 24px;
+      width: 450px;
+      color: var(--text);
+      margin: 0 0 24px 0;
+    }
+
+    #welcome-screen .quote {
+      font-size: 16px;
+      font-style: italic;
+      max-width: 450px;
+      margin: 0;
+      opacity: 0.8;
+    }
+
+    #welcome-screen .author {
+      margin-top: 12px;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .cell {
+      margin-bottom: 20px;
+      padding: 10px;
+      border-left: 4px solid var(--glass-border);
+      background: var(--glass);
+      border-radius: 8px;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: fadeInUp 360ms ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .code {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: ui-monospace, monospace;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.45;
+      border: 1px solid var(--code-border);
+    }
+
+    .markdown {
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.5;
+      overflow-wrap: break-word;
+      /* FIX: Prevents long strings from overflowing */
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      color: var(--text);
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .svg-output {
+      margin-top: 10px;
+      display: block;
+      width: 100%;
+      overflow: auto;
+    }
+
+    .svg-output svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    iframe {
+      width: 100%;
+      height: 420px;
+      border: none;
+      margin-top: 10px;
+      border-radius: 8px;
+      box-shadow: var(--iframe-shadow);
+    }
+
+    .table-output {
+      margin-top: 10px;
+      border-collapse: collapse;
+      width: 100%;
+      background: var(--glass);
+      border-radius: 6px;
+      font-size: 13px;
+      /* overflow is handled by wrapper now */
+    }
+
+    .table-output th,
+    .table-output td {
+      border: 1px solid var(--glass-border);
+      padding: 8px 10px;
+      text-align: left;
+      color: var(--text);
+    }
+
+    .table-output th {
+      background: var(--glass-2);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 10px;
+      border-radius: 6px;
+    }
+
+    /* FIX: New wrapper for tables to handle overflow */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      padding: 40px 0;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 3px solid var(--glass-border);
+      border-top-color: var(--primary);
+      animation: spin 900ms linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .error-note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .about-button {
+      --size: 48px;
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      width: var(--size);
+      height: var(--size);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--card-border-color);
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 220ms ease, border-color 240ms ease;
+      box-shadow: var(--card-shadow);
+    }
+
+    .about-button:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2000;
+      background: rgba(15, 15, 15, 0.4);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 250ms ease forwards;
+    }
+
+    .about-popup {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--glass-border);
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      animation: fadeInUp 300ms 100ms ease forwards;
+      opacity: 0;
+      transform: translateY(15px);
+    }
+
+    .about-popup h2 {
+      margin: 0 0 12px 0;
+      font-size: 22px;
+      color: var(--text);
+    }
+
+    .about-popup p {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .about-popup p:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .close-button {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      --size: 32px;
+      width: var(--size);
+      height: var(--size);
+      border-radius: 8px;
+      background: var(--glass-2);
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 180ms ease, border-color 180ms ease;
+    }
+
+    .close-button:hover {
+      background: var(--glass);
+      border-color: var(--glass-border);
+    }
+
+    a {
+      font-weight: 700;
+      color: var(--text);
+      /* A clean blue color */
+      text-decoration: none;
+      /* Removes the underline from the link */
+      transition: color 0.3s ease;
+      /* Adds a smooth color transition on hover */
+    }
+
+    a:hover {
+      color: var(--muted);
+      /* A darker blue on hover for visual feedback */
+      /* Adds an underline on hover */
+    }
+
+    @media (max-width:800px) {
+      .app-layout {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      .content-area {
+        height: auto;
+        padding: 24px;
+      }
+
+      #notebook-viewer,
+      #welcome-screen {
+        max-width: 100%;
+      }
+
+      .about-button {
+        bottom: 16px;
+        right: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <header class="app-header">
+        <div class="title-group">
+          <div class="logo" aria-hidden="true">
+            <img src="C:\Users\Tanishq\Downloads\rmn_pfps\ChatGPT Image Jun 25, 2025, 04_02_36 PM-min.png">
+          </div>
+          <div>
+            <h1>SoultySprings .ipynbs</h1>
+          </div>
+          <p>Click to display </p>
+        </div>
+
+      </header>
+      <div id="notebookList"></div>
+      <div class="controls">
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme (dark / light)">
+          <svg id="themeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6" />
+          </svg>
+        </button>
+      </div>
+    </aside>
+    <main class="content-area">
+      <div id="welcome-screen">
+        <div id="welcome-content">
+          <h2>Uh oh! You're not viewing a notebook. Select one from the sidebar to open your <code>.ipynb</code> file.
+          </h2>
+
+          <p class="quote" id="quote-text"></p>
+          <p class="author" id="quote-author"></p>
+        </div>
+      </div>
+      <div id="notebook-viewer" class="hidden"></div>
+    </main>
+  </div>
+  <button class="about-button" id="aboutButton" title="About this page">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="16" x2="12" y2="12"></line>
+      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+  </button>
+  <div class="overlay hidden" id="aboutOverlay">
+    <div class="about-popup">
+      <button class="close-button" id="closeAboutButton" title="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <h2>About This Viewer</h2>
+      <p>
+        Hi! I'm SoultySprings, and I built this interactive viewer for Jupyter Notebook
+        (<code>.ipynb</code>) files using pure HTML, CSS, and JavaScript. I coded it with
+        help from Google's Gemini and ChatGPT.
+      </p>
+      <p>
+        This project is a viewer for my own notebooks. It fetches raw <code>.ipynb</code> files
+        from my GitHub, parses the JSON, and dynamically renders the markdown, code,
+        and outputs. The design is neomorphic and includes a persistent light/dark
+        theme.
+      </p>
+      <p>
+        Check out the source code on my GitHub:
+        <a href="https://github.com/SoultySprings">SoultySprings</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    const notebooks = [
+      
+      {
+        name: "Video Game Sales Analysis (VGChartz 2024)",
+        date: "2025 / June 04 ~ Sept 03",
+        url: "https://raw.githubusercontent.com/SoultySprings/PyProjects/master/VideoGameSales/videoGamesDataAnalysis.ipynb",
+        meta: [
+          "Pandas, Plotly, Seaborn, Matplotlib, Dash",
+          "Gaming Industry, Sales Analytics, Data Visualization",
+          "An exploratory data analysis of the VGChartz 2024 dataset, visualizing sales trends by genre, platform, publisher, and region to uncover market insights."
+        ]
+      },
+      {
+        name: "Lung Capacity EDA with Python",
+        date: "2025 / June 19",
+        url: "https://raw.githubusercontent.com/SoultySprings/lung-capacity-eda/refs/heads/master/EDA/lc_sns_eda.ipynb",
+        meta: [
+          "Pandas, NumPy, Seaborn, Plotly, Matplotlib",
+          "Health Data Science",
+          "An exploratory data analysis of a lung capacity dataset, visualizing correlations between lung function and factors like age, height, gender, smoking, and caesarean birth."
+        ]
+      },
+      {
+        name: "Global Mobile Networks Analysis",
+        date: "2025 / June 16 ~ June 17",
+        url: "https://raw.githubusercontent.com/SoultySprings/ww-mobile-networks/refs/heads/master/EDA/networksEDA.ipynb",
+        meta: [
+          "Pandas, NumPy, Plotly, Seaborn, Matplotlib, Openpyxl",
+          "Telecommunications, Mobile Networks",
+          "An exploratory data analysis of global mobile networks, visualizing data on operators, cellular technologies (e.g., 4G, 5G), frequency bands, and market distribution by country."
+        ]
+      }, 
+      {
+        name: "Processor Spec Analysis with Python",
+        date: "2025 / June 09 ~ June 13",
+        url: "https://raw.githubusercontent.com/SoultySprings/processors-smart-devices/refs/heads/master/EDA/processorsSNS_EDA.ipynb",
+        meta: [
+          "Pandas, Seaborn, Matplotlib, Rich",
+          "Hardware Analysis, Tech Specs",
+          "An exploratory data analysis of processor specifications, investigating trends in features like GPU, cache, RAM, and connectivity across various brands and release years."
+        ]
+      }
+    ];
+    const quotes = [
+      { quote: "Bananas are berries, but strawberries are not.", author: "Fact" },
+      { quote: "The only true wisdom is in knowing you know nothing.", author: "Socrates" },
+      { quote: "Sharks existed before trees.", author: "Fact" },
+      { quote: "Imagination is more important than knowledge.", author: "Albert Einstein" },
+      { quote: "The Eiffel Tower can be 15 cm taller during the summer due to thermal expansion.", author: "Fact" },
+      { quote: "It always seems impossible until it’s done.", author: "Nelson Mandela" },
+      { quote: "Octopuses have three hearts.", author: "Fact" },
+      { quote: "Do not go where the path may lead, go instead where there is no path and leave a trail.", author: "Ralph Waldo Emerson" },
+      { quote: "Honey never spoils; archaeologists found edible honey in 3,000-year-old Egyptian tombs.", author: "Fact" },
+      { quote: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+      { quote: "Sloths can hold their breath longer than dolphins can.", author: "Fact" },
+      { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+      { quote: "Water can boil and freeze at the same time under certain conditions.", author: "Fact" },
+      { quote: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+      { quote: "Scotland’s national animal is the unicorn.", author: "Fact" },
+      { quote: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+      { quote: "Cleopatra lived closer in time to the Moon landing than to the building of the pyramids.", author: "Fact" },
+      { quote: "Happiness depends upon ourselves.", author: "Aristotle" },
+      { quote: "Your stomach gets a new lining every 3–4 days.", author: "Fact" },
+      { quote: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" },
+      { quote: "The first oranges weren’t orange, they were green.", author: "Fact" },
+      { quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+      { quote: "Peanuts are not nuts; they are legumes.", author: "Fact" },
+      { quote: "Not everything that is faced can be changed, but nothing can be changed until it is faced.", author: "James Baldwin" },
+      { quote: "Some turtles can breathe through their butts.", author: "Fact" },
+      { quote: "Do not wait to strike till the iron is hot; but make it hot by striking.", author: "William Butler Yeats" },
+      { quote: "Cows have best friends and get stressed when separated.", author: "Fact" },
+      { quote: "If you judge people, you have no time to love them.", author: "Mother Teresa" },
+      { quote: "Nintendo was founded in 1889 as a playing card company.", author: "Fact" },
+      { quote: "An unexamined life is not worth living.", author: "Socrates" },
+      { quote: "Some cats are allergic to humans.", author: "Fact" },
+      { quote: "Fall seven times and stand up eight.", author: "Japanese Proverb" },
+      { quote: "The fingerprints of a koala are almost indistinguishable from humans.", author: "Fact" },
+      { quote: "Be yourself; everyone else is already taken.", author: "Oscar Wilde" },
+      { quote: "Otters hold hands while they sleep to keep from drifting apart.", author: "Fact" },
+      { quote: "Everything you can imagine is real.", author: "Pablo Picasso" },
+      { quote: "Pineapples take about two years to grow.", author: "Fact" },
+      { quote: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
+      { quote: "Bees can recognize human faces.", author: "Fact" },
+      { quote: "Do not let what you cannot do interfere with what you can do.", author: "John Wooden" },
+      { quote: "The first email was sent by Ray Tomlinson to himself in 1971.", author: "Fact" },
+      { quote: "Keep your face always toward the sunshine—and shadows will fall behind you.", author: "Walt Whitman" },
+      { quote: "A group of flamingos is called a flamboyance.", author: "Fact" },
+      { quote: "The mind is everything. What you think you become.", author: "Buddha" },
+      { quote: "Butterflies can taste with their feet.", author: "Fact" },
+      { quote: "Opportunities don’t happen, you create them.", author: "Chris Grosser" },
+      { quote: "Sea otters have a favorite rock they use to crack open shellfish.", author: "Fact" },
+      { quote: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein" },
+      { quote: "Humans share 60% of their DNA with bananas.", author: "Fact" },
+      { quote: "Don’t count the days, make the days count.", author: "Muhammad Ali" },
+      { quote: "Polar bear fur is actually transparent, not white.", author: "Fact" },
+      { quote: "Act as if what you do makes a difference. It does.", author: "William James" },
+      { quote: "A giraffe can clean its ears with its tongue.", author: "Fact" },
+      { quote: "Dream big and dare to fail.", author: "Norman Vaughan" },
+      { quote: "A day on Mars is about 24 hours and 39 minutes.", author: "Fact" },
+      { quote: "Turn your wounds into wisdom.", author: "Oprah Winfrey" },
+      { quote: "The Moon is moving away from Earth at about 3.8 cm per year.", author: "Fact" },
+      { quote: "Change your thoughts and you change your world.", author: "Norman Vincent Peale" },
+      { quote: "Ants never sleep.", author: "Fact" },
+      { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+      { quote: "The first alarm clock could only ring at 4 a.m.", author: "Fact" },
+      { quote: "Happiness is not something ready made. It comes from your own actions.", author: "Dalai Lama" },
+      { quote: "Ducks quack, and somehow the universe listens.", author: "???" }, // <-- easter egg #1
+      { quote: "In Switzerland, it’s illegal to own just one guinea pig.", author: "Fact" },
+      { quote: "Don’t cry because it’s over, smile because it happened.", author: "Dr. Seuss" },
+      { quote: "Owls have tubular eyes, not spherical ones.", author: "Fact" },
+      { quote: "What you get by achieving your goals is not as important as what you become by achieving your goals.", author: "Zig Ziglar" },
+      { quote: "The inventor of Vaseline ate a spoonful of it every day.", author: "Fact" },
+      { quote: "Somewhere, something incredible is waiting to be known.", author: "Carl Sagan" },
+      { quote: "There are more Lego minifigures than people on Earth.", author: "Fact" },
+      { quote: "Logic will get you from A to B. Imagination will take you everywhere.", author: "Albert Einstein" },
+      { quote: "Penguins propose to each other with pebbles.", author: "Fact" },
+      { quote: "Everything has beauty, but not everyone sees it.", author: "Confucius" },
+      { quote: "Tomatoes were once considered poisonous in Europe.", author: "Fact" },
+      { quote: "If opportunity doesn’t knock, build a door.", author: "Milton Berle" },
+      { quote: "The longest recorded flight of a chicken is 13 seconds.", author: "Fact" },
+      { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+      { quote: "The shortest war in history lasted 38 minutes.", author: "Fact" },
+      { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+      { quote: "Cabbages are just nature’s attempt at origami.", author: "Hidden Source" } // <-- easter egg #2
+    ];
+    const notebookListDiv = document.getElementById('notebookList');
+    const notebookViewerDiv = document.getElementById('notebook-viewer');
+    const welcomeScreenDiv = document.getElementById('welcome-screen');
+    const root = document.documentElement;
+
+    function getSource(cell) { return Array.isArray(cell.source) ? cell.source.join('') : String(cell.source || ""); }
+    function makeCodeElement(codeText) { const d = document.createElement('div'); d.className = 'code'; const p = document.createElement('pre'); p.textContent = codeText; d.appendChild(p); return d; }
+    function makeIframeFromHTML(html) { const i = document.createElement('iframe'); i.srcdoc = html; return i; }
+    function renderNotebook(content, container) {
+      const notebook = JSON.parse(content);
+      container.innerHTML = '';
+      notebook.cells.forEach((cell, idx) => {
+        const div = document.createElement('div');
+        div.className = 'cell';
+        div.style.animationDelay = `${Math.min(0.06 * idx, 1.2)}s`;
+        if (cell.cell_type === 'markdown') {
+          div.classList.add('markdown');
+          try { div.innerHTML = marked.parse(getSource(cell)); } catch (e) { div.textContent = getSource(cell); }
+        } else if (cell.cell_type === 'code') {
+          div.appendChild(makeCodeElement(getSource(cell)));
+          if (Array.isArray(cell.outputs)) {
+            cell.outputs.forEach(output => {
+              if (output.output_type === 'stream' && output.text) { const p = document.createElement('pre'); p.textContent = Array.isArray(output.text) ? output.text.join('') : output.text; div.appendChild(p); }
+              if (output.output_type === 'error' && output.traceback) { const p = document.createElement('pre'); p.textContent = Array.isArray(output.traceback) ? output.traceback.join('\n') : String(output.traceback); div.appendChild(p); }
+              if (output.data) {
+                let renderedTable = false;
+                if (output.data['image/png']) { const i = document.createElement('img'); i.src = 'data:image/png;base64,' + (Array.isArray(output.data['image/png']) ? output.data['image/png'].join('') : output.data['image/png']); div.appendChild(i); }
+                if (output.data['image/jpeg']) { const i = document.createElement('img'); i.src = 'data:image/jpeg;base64,' + (Array.isArray(output.data['image/jpeg']) ? output.data['image/jpeg'].join('') : output.data['image/jpeg']); div.appendChild(i); }
+                if (output.data['image/svg+xml']) { const r = Array.isArray(output.data['image/svg+xml']) ? output.data['image/svg+xml'].join('') : output.data['image/svg+xml']; const w = document.createElement('div'); w.className = 'svg-output'; w.innerHTML = r; div.appendChild(w); }
+                if (output.data['text/html']) {
+                  const html = Array.isArray(output.data['text/html']) ? output.data['text/html'].join('') : output.data['text/html'];
+                  if (html.includes('<table')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-wrapper'; // FIX: Add wrapper class for scrolling
+                    wrapper.innerHTML = html;
+                    wrapper.querySelectorAll('table').forEach(tbl => tbl.classList.add('table-output'));
+                    div.appendChild(wrapper);
+                    renderedTable = true;
+                  } else {
+                    div.appendChild(makeIframeFromHTML(html));
+                    renderedTable = true;
+                  }
+                }
+                if (output.data['text/plain'] && !renderedTable) { const p = Array.isArray(output.data['text/plain']) ? output.data['text/plain'].join('') : output.data['text/plain']; const e = document.createElement('pre'); e.textContent = p; div.appendChild(e); }
+              }
+            });
+          }
+        }
+        container.appendChild(div);
+      });
+    }
+
+    function loadNotebook(url, container) { container.innerHTML = `<div class="loading"><span class="spinner" aria-hidden="true"></span>Loading notebook…</div>`; fetch(url).then(res => { if (!res.ok) throw new Error('Failed to fetch notebook (HTTP ' + res.status + ')'); return res.text(); }).then(content => { renderNotebook(content, container); }).catch(err => { container.innerHTML = `<div class="error-note">Error: ${err.message}.</div>`; }); }
+    function showWelcomeScreen() { const randomQuote = quotes[Math.floor(Math.random() * quotes.length)]; document.getElementById('quote-text').textContent = `“${randomQuote.quote}”`; document.getElementById('quote-author').textContent = `— ${randomQuote.author}`; welcomeScreenDiv.classList.remove('hidden'); welcomeScreenDiv.classList.add('visible'); notebookViewerDiv.classList.add('hidden'); }
+    notebooks.forEach((nb) => {
+      const item = document.createElement('div');
+      item.className = 'sidebar-item';
+
+      // Build meta string with newlines (using <br>)
+      const metaHTML = nb.meta && nb.meta.length
+        ? `<div class="notebook-meta">${nb.meta.map(m => `${m}`).join('<br>')}</div>`
+        : '';
+
+      // Build date section if present
+      const dateHTML = nb.date
+        ? `<p class="notebook-date">${nb.date}</p>`
+        : '';
+
+      // Construct inner HTML
+      item.innerHTML = `
+    <p class="notebook-title">${nb.name}</p>
+    ${dateHTML}
+    ${metaHTML}
+  `;
+
+      item.addEventListener('click', () => {
+        if (item.classList.contains('active')) {
+          item.classList.remove('active');
+          showWelcomeScreen();
+        } else {
+          document.querySelector('.sidebar-item.active')?.classList.remove('active');
+          item.classList.add('active');
+          welcomeScreenDiv.classList.add('hidden');
+          welcomeScreenDiv.classList.remove('visible');
+          notebookViewerDiv.classList.remove('hidden');
+          loadNotebook(nb.url, notebookViewerDiv);
+        }
+      });
+
+      notebookListDiv.appendChild(item);
+    });
+
+    /* === Theme Persistence & Transition Logic === */
+    const themeToggle = document.getElementById('themeToggle');
+    let isTransitioning = false;
+    function setLightTheme(isLight) {
+      if (isTransitioning) return;
+      isTransitioning = true;
+      const theme = isLight ? 'light' : 'dark';
+      const targetPalette = {
+        bg: isLight ? '#fff7ed' : '#000000',
+        bgEnd: isLight ? '#fdead7' : '#1e1109',
+        glass: isLight ? 'rgba(154, 52, 18, 0.03)' : 'rgba(249, 115, 22, 0.04)',
+        glass2: isLight ? 'rgba(154, 52, 18, 0.02)' : 'rgba(249, 115, 22, 0.02)'
+      };
+      root.style.setProperty('--transition-bg', targetPalette.bg);
+      root.style.setProperty('--transition-bg-end', targetPalette.bgEnd);
+      root.style.setProperty('--transition-glass', targetPalette.glass);
+      root.style.setProperty('--transition-glass-2', targetPalette.glass2);
+      root.classList.add('theme-in-transition');
+      setTimeout(() => {
+        isLight ? root.setAttribute('data-theme', 'light') : root.removeAttribute('data-theme');
+        localStorage.setItem('notebookTheme', theme);
+      }, 50);
+      setTimeout(() => {
+        root.classList.remove('theme-in-transition');
+        isTransitioning = false;
+      }, 100);
+    }
+    themeToggle.addEventListener('click', () => setLightTheme(!root.hasAttribute('data-theme') || root.getAttribute('data-theme') !== 'light'));
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('notebookTheme') || 'dark';
+      if (savedTheme === 'light') root.setAttribute('data-theme', 'light');
+    }
+
+    /* === About Popup Logic === */
+    const aboutButton = document.getElementById('aboutButton');
+    const aboutOverlay = document.getElementById('aboutOverlay');
+    const closeAboutButton = document.getElementById('closeAboutButton');
+    aboutButton.addEventListener('click', () => aboutOverlay.classList.remove('hidden'));
+    closeAboutButton.addEventListener('click', () => aboutOverlay.classList.add('hidden'));
+    aboutOverlay.addEventListener('click', (event) => { if (event.target === aboutOverlay) { aboutOverlay.classList.add('hidden'); } });
+
+    /* === Initial Page Load === */
+    initializeTheme();
+    showWelcomeScreen();
+  </script>
+</body>
+
+</html>
