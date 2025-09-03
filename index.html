@@ -3,13 +3,13 @@
 
 <head>
   <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
-<link rel="shortcut icon" href="favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-<link rel="manifest" href="site.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Notebook Viewer — Fixed Scrolling</title>
+  <title>SoultySprings iPyNB Viewer</title>
 
   <style>
     /* === Black & Cinder embers Theme === */
@@ -308,7 +308,7 @@
       font-weight: 500;
       margin-top: 4px;
       color: var(--muted);
-      opacity: 0.95 ;
+      opacity: 0.95;
     }
 
     #welcome-screen {
@@ -340,7 +340,6 @@
 
     #welcome-screen h2 {
       font-size: 24px;
-      width: 450px;
       color: var(--text);
       margin: 0 0 24px 0;
     }
@@ -348,7 +347,6 @@
     #welcome-screen .quote {
       font-size: 16px;
       font-style: italic;
-      max-width: 450px;
       margin: 0;
       opacity: 0.8;
     }
@@ -608,31 +606,152 @@
     }
 
     @media (max-width:800px) {
+
+      /* Stack layout vertically and allow content to size naturally */
       .app-layout {
         flex-direction: column;
+        align-items: stretch;
+        height: 100vh;
+        /* keep full viewport to allow content-area to scroll */
       }
 
+      /* Sidebar: compact, scrollable, limited to a portion of the screen */
       .sidebar {
         width: 100%;
-        height: auto;
+        max-height: 40vh;
+        /* allow it to grow but not consume entire screen */
+        overflow-y: auto;
+        overflow-x: hidden;
         position: relative;
         border-right: none;
         border-bottom: 1px solid var(--glass-border);
+        padding: 12px 16px;
+        box-sizing: border-box;
       }
 
+      /* Slightly tighter notebook list items for small screens */
+      .sidebar-item {
+        padding: 10px 12px;
+      }
+
+      .notebook-title {
+        font-size: 14px;
+        line-height: 1.2;
+        margin-bottom: 6px;
+      }
+
+      .notebook-meta {
+        font-size: 12px;
+      }
+
+      .notebook-date {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      /* Content area: flexible and scrollable (min-height:0 lets flex children scroll properly) */
       .content-area {
-        height: auto;
-        padding: 24px;
+        flex: 1;
+        min-height: 0;
+        /* critical so internal children can scroll instead of overflowing */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 18px;
+        box-sizing: border-box;
       }
 
+      /* Make notebook viewer and welcome screen full width and responsive */
       #notebook-viewer,
       #welcome-screen {
         max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
       }
 
+      /* Ensure welcome screen centers but doesn't overflow */
+      #welcome-screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+      }
+
+      #welcome-content {
+        width: 100%;
+        max-width: 680px;
+      }
+
+      #welcome-screen h2 {
+        margin: 0 0 24px 0;
+        color: var(--text);
+        /* allow wrapping and soft hyphenation */
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+
+        /* responsive size so it scales down on small screens */
+        font-size: clamp(16px, 3.8vw, 24px);
+        line-height: 1.25;
+        box-sizing: border-box;
+      }
+
+      #quote-text,
+      #quote-author {
+        font-size: 14px;
+        margin: 6px 0 0 0;
+      }
+
+      /* Notebook cells and outputs: full-width, comfortable padding */
+      .cell {
+        margin-bottom: 14px;
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      /* Responsive iframes & images inside notebook outputs */
+      iframe {
+        width: 100%;
+        height: auto;
+        min-height: 260px;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      /* Tables: horizontal scrolling with native touch support */
+      .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .table-output {
+        width: 100%;
+        white-space: normal;
+        table-layout: auto;
+      }
+
+      /* Code & pre: wrap to avoid horizontal overflow */
+      .code pre,
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 13px;
+      }
+
+      /* Keep the about button accessible but slightly smaller on phones */
       .about-button {
         bottom: 16px;
         right: 16px;
+        --size: 44px;
+        width: var(--size);
+        height: var(--size);
       }
     }
   </style>
@@ -644,7 +763,7 @@
       <header class="app-header">
         <div class="title-group">
           <div class="logo" aria-hidden="true">
-            <img src="pfp.png">
+            <img src="C:\Users\Tanishq\Downloads\rmn_pfps\pfp.png">
           </div>
           <div>
             <h1>SoultySprings .ipynbs</h1>
@@ -716,7 +835,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     const notebooks = [
-      
+
       {
         name: "Video Game Sales Analysis (VGChartz 2024)",
         date: "2025 / June 04 ~ Sept 03",
@@ -746,7 +865,7 @@
           "Telecommunications, Mobile Networks",
           "An exploratory data analysis of global mobile networks, visualizing data on operators, cellular technologies (e.g., 4G, 5G), frequency bands, and market distribution by country."
         ]
-      }, 
+      },
       {
         name: "Processor Spec Analysis with Python",
         date: "2025 / June 09 ~ June 13",
@@ -980,4 +1099,3 @@
 </body>
 
 </html>
-
